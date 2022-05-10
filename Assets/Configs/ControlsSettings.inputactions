@@ -1,0 +1,123 @@
+{
+    "name": "ControlsSettings",
+    "maps": [
+        {
+            "name": "BattleFieldControl",
+            "id": "90f9953d-f2cc-4237-ae9e-d65e84213eec",
+            "actions": [
+                {
+                    "name": "MousePosition",
+                    "type": "Value",
+                    "id": "cdf505dc-436c-44a6-862b-e7ffd9810485",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Move",
+                    "type": "Button",
+                    "id": "a4ba8cdd-9f6f-4c1c-ba98-d55616c61079",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SelectOne",
+                    "type": "Button",
+                    "id": "3208bc04-a740-4e53-9d36-8dc78bf965ac",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "BulkSelection",
+                    "type": "PassThrough",
+                    "id": "e0b40186-a1d8-42e3-987b-204dbe4d01fc",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "427c4c92-2b54-4f8c-a8ef-349a7809fc70",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MousePosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "df19c7ee-b83e-49a0-a7c9-295cf8cfef9d",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7d761152-2f3a-487a-b453-bf79b8242216",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SelectOne",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Mouse Drag",
+                    "id": "1ba15a20-6a12-4b36-8ef9-c6144c1b91ca",
+                    "path": "MouseDrag",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BulkSelection",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Modifier",
+                    "id": "315b14ef-d71b-4dd7-81f6-aea35531c54f",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BulkSelection",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Delta",
+                    "id": "ef2ffeef-c82f-4ea0-b708-120ee5e4a3d4",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BulkSelection",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Position",
+                    "id": "29010e7e-47af-4a72-b75b-7177378e368b",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BulkSelection",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
