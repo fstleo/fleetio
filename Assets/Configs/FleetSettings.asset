@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _settings:
     BaseAttack: 6
-    MovementSpeed: 4
+    MovementSpeed: 2
     RotationSpeed: 2

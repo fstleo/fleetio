@@ -1,31 +1,11 @@
- using System;
- using System.Collections.Generic;
- using System.Diagnostics;
- using System.Runtime.InteropServices;
- using Unity.Collections;
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Fleetio.ECS;
 using Unity.Collections.LowLevel.Unsafe;
- using Debug = UnityEngine.Debug;
-
-
- namespace Fleetio.ECS
+ 
+ namespace Unity.Collections
 {
-
-    public interface IComponentsList
-    {
-        void RemoveAt(int id);
-    }
-    /// <summary>
-    /// A version of <see cref="System.Collections.Generic.List{T}"/> that uses
-    /// unmanaged memory.
-    /// </summary>
-    /// 
-    /// <typeparam name="T">
-    /// Type of elements in the list. Must be blittable.
-    /// </typeparam>
-    ///
-    /// <author>
-    /// Jackson Dunstan, http://JacksonDunstan.com/articles/4734
-    /// </author>
     [NativeContainer]
     [NativeContainerSupportsMinMaxWriteRestriction]
     [StructLayout(LayoutKind.Sequential)]
@@ -35,15 +15,10 @@ using Unity.Collections.LowLevel.Unsafe;
     public unsafe struct ComponentsList<T> : IDisposable, IComponentsList
         where T : unmanaged
     {
-        // Backing array
-        private NativeArray<T> _array;
-        private NativeArray<bool> _existingCheckArray;
- 
 
-        // Allocator used to create the backing array
-        private readonly Allocator _allocator;
- 
-        // These are all required when checks are enabled
+        public NativeHashMap<int, T> Map;
+
+        // These are all required when checks are enable`d
         // They must have these exact types, names, and attributes
         internal int m_Length;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -68,10 +43,7 @@ using Unity.Collections.LowLevel.Unsafe;
         [BurstCompatible(GenericTypeArguments = new [] { typeof(AllocatorManager.AllocatorHandle) })]
         public ComponentsList(int capacity, Allocator allocator)
         {
-            // Create the backing array
-            _array = new NativeArray<T>(capacity, allocator);
-            _existingCheckArray = new NativeArray<bool>(capacity, allocator);
-            _allocator = allocator;
+            Map = new NativeHashMap<int, T>(capacity, allocator);
             m_Length = capacity;
  
             // Initialize fields for safety checks
@@ -81,7 +53,7 @@ using Unity.Collections.LowLevel.Unsafe;
             DisposeSentinel.Create(out m_Safety, out m_DisposeSentinel, 0, allocator);
 #endif
         }
- 
+
         /// <summary>
         /// Get the capacity of the list. This is always greater than or equal to
         /// its <see cref="Count"/>.
@@ -92,7 +64,7 @@ using Unity.Collections.LowLevel.Unsafe;
         /// Get the number of elements currently in the list. This is always less
         /// than or equal to the <see cref="Capacity"/>.
         /// </summary>
-        public int Count => _array.Length;
+        public int Count => Map.Count();
 
         /// <summary>
         /// Index into the list's elements
@@ -102,7 +74,7 @@ using Unity.Collections.LowLevel.Unsafe;
         /// Index of the element to get or set. Must be greater than or equal to
         /// zero and less than <see cref="Count"/>.
         /// </param>
-        public readonly bool TryGet(int index, out T component)
+        public bool TryGet(int index, out T component)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle.CheckReadAndThrow(m_Safety);
@@ -111,64 +83,27 @@ using Unity.Collections.LowLevel.Unsafe;
             //     FailOutOfRangeError(index);
             // }
 #endif
-            component = _array[index];
-            return _existingCheckArray[index];
+            return Map.TryGetValue(index, out component);
         }
-        
+
         /// <summary>
         /// Add an element to the end of the list. If the list is full, it will be
         /// automatically resized by allocating new unmanaged memory with double
         /// the <see cref="Capacity"/> and copying over all existing elements.
         /// </summary>
-        /// 
+        /// <param name="index">Key of element</param>
         /// <param name="value">
         /// Element to add
         /// </param>
         public void Set(int index, T value)
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            AtomicSafetyHandle.CheckWriteAndThrow(m_Safety);
-            // if (m_MinIndex != 0 || m_MaxIndex > Capacity - 1)
-            // {
-            //     throw new IndexOutOfRangeException(
-            //         "Can't call add in an IJobParallelFor job.");
-            // }
-#endif
-            //The list is full. Resize.
-            
-            // int insertIndex = index;
-            // if (insertIndex >= m_Length)
-            // {
-            //     int newLength = m_Length * 2;
-            //     Resize(ref _array, newLength);
-            //     Resize(ref _existingCheckArray, newLength);
-            //     m_Length = newLength;
-            // }
- 
-            
-            // Insert at the end
-            _array[index] = value;
-            _existingCheckArray[index] = true;
-            
+            Map[index] = value;
             // Mark the new maximum index that can be read
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            m_MaxIndex = Count;
-#endif
+// #if ENABLE_UNITY_COLLECTIONS_CHECKS
+//             m_MaxIndex = Count;
+// #endif
         }
-
-        private void Resize<TArr>(ref NativeArray<TArr> array,int newLength) where TArr : struct
-        {
-            NativeArray<TArr> newArray = new NativeArray<TArr>(
-                newLength,
-                _allocator);
-            UnsafeUtility.MemCpy(
-                newArray.GetUnsafePtr(),
-                array.GetUnsafePtr(),
-                m_Length * (long)UnsafeUtility.SizeOf<TArr>());
-            array.Dispose();
-            array = newArray;
-        }
- 
+        
         /// <summary>
         /// Remove an element at a given index. Elements after it will be shifted
         /// toward the front of the list.
@@ -180,20 +115,13 @@ using Unity.Collections.LowLevel.Unsafe;
         /// </param>
         public void RemoveAt(int index)
         {
-            int numElementsToShift = Count - index - 1;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle.CheckWriteAndThrow(m_Safety);
-            if (index < m_MinIndex || index + numElementsToShift > m_MaxIndex)
-            {
-                FailOutOfRangeError(index);
-            }
 #endif
-
-            _array[index] = default;
-            _existingCheckArray[index] = false;
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            m_MaxIndex = Count - 1;
-#endif
+            Map.Remove(index);
+// #if ENABLE_UNITY_COLLECTIONS_CHECKS
+//             m_MaxIndex = Count - 1;
+// #endif
         }
  
         /// <summary>
@@ -203,27 +131,25 @@ using Unity.Collections.LowLevel.Unsafe;
         /// <returns>
         /// A managed array with all of the list's elements
         /// </returns>
-        public NativeArray<T> GetArray()
+        public NativeArray<T> GetArray(Allocator allocator)
         {
-            return _array;
+            return Map.GetValueArray(allocator);
         }
  
-        /// <summary>
-        /// Check if the underlying unmanaged memory has been created. This is
-        /// initially true then false after <see cref="Dispose"/> is called.
-        /// </summary>
-        public bool IsCreated => _array.IsCreated;
-
+        public NativeKeyValueArrays<int, T> GetKeyValue(Allocator allocator)
+        {
+            return Map.GetKeyValueArrays(allocator);
+        }
+        
         /// <summary>
         /// Release the list's unmanaged memory. Do not use it after this.
         /// </summary>
         public void Dispose()
         {
+            Map.Dispose();
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             DisposeSentinel.Dispose(ref m_Safety, ref m_DisposeSentinel);
 #endif
-            _array.Dispose();
-            _existingCheckArray.Dispose();
         }
  
         // Throw an appropriate exception when safety checks are enabled

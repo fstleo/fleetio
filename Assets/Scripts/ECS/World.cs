@@ -14,19 +14,21 @@ namespace Fleetio.ECS
 
         private readonly Dictionary<Type, object> _componentsLists = new(64);
 
-        private HashSet<int> _entities = new();
+        public NativeHashSet<int> Entities;
 
-        private Stack<int> _freeEntities = new(32768);
+        private Stack<int> _freeEntities;
 
         private List<ISystem> _systems = new(32);
 
-        public int EntitiesCount => _entities.Count;
+        public int EntitiesCount => Entities.Count();
 
         private int _currentEntitiesCapacity = 0;
 
-        public World()
+        public World(int initialCapacity)
         {
-            AllocateFreeEntities(32768);
+            Entities = new NativeHashSet<int>(initialCapacity, Allocator.Persistent);
+            _freeEntities = new Stack<int>(initialCapacity);
+            AllocateFreeEntities(initialCapacity);
         }
 
         public void RegisterSystem(ISystem system)
@@ -59,7 +61,7 @@ namespace Fleetio.ECS
                 AllocateFreeEntities(_currentEntitiesCapacity * 2);
             }
             var id = _freeEntities.Pop();
-            _entities.Add(id);
+            Entities.Add(id);
             
             return id;
         }
@@ -71,7 +73,7 @@ namespace Fleetio.ECS
                 ((IComponentsList)componentsList).RemoveAt(entityId);
             }
             _freeEntities.Push(entityId);
-            _entities.Remove(entityId);
+            Entities.Remove(entityId);
         }
 
         public ComponentsList<T> GetRepo<T>() where T : unmanaged
@@ -93,6 +95,8 @@ namespace Fleetio.ECS
             {
                 (d as IDisposable).Dispose();
             }
+
+            Entities.Dispose();
         }
     }
 

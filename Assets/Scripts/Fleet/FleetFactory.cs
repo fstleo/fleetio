@@ -1,5 +1,7 @@
 using Fleetio.ECS;
+using Fleetio.Initialization;
 using Fleetio.Movement;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Fleetio.Core
@@ -11,6 +13,7 @@ namespace Fleetio.Core
 
         private ComponentsList<PositionData> _positionsRepo;
         private ComponentsList<MoveComponent> _moveRepo;
+        private ComponentsList<Fleet> _fleetMarkers;
 
         public FleetFactory(FleetSettings settings, World world)
         {
@@ -18,6 +21,7 @@ namespace Fleetio.Core
             _world = world;
             _positionsRepo = world.GetRepo<PositionData>();
             _moveRepo = world.GetRepo<MoveComponent>();
+            _fleetMarkers = world.GetRepo<Fleet>();
         }
 
         public int Create()
@@ -35,6 +39,7 @@ namespace Fleetio.Core
                 Speed = _settings.MovementSpeed,
                 Target = new Vector3(4,0,4)
             });
+            _fleetMarkers.Set(id, new Fleet());
             return id;
         }
     }

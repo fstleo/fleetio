@@ -1,41 +1,50 @@
 using Fleetio.ECS;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Fleetio.Presentation
 {
-    public class DrawMeshesSystem : ISystem
+    public class DrawMeshesSystem<TComponent> : ISystem where TComponent : unmanaged
     {
         private readonly Mesh _mesh;
         private readonly IJobDependency _moveJob;
-        private readonly World _world;
-        private ComponentsList<PositionData> _positions;
+        private readonly ComponentsList<PositionData> _positions;
+        private readonly ComponentsList<TComponent> _markers;
 
         private readonly RenderParams _renderParams;
-        
-        public DrawMeshesSystem(ComponentsList<PositionData> positions, Material material, Mesh mesh, IJobDependency moveJob, World world)
+
+        private ComponentsList<TComponent> _marker;
+
+        public DrawMeshesSystem(ComponentsList<PositionData> positions, ComponentsList<TComponent> markers,
+            Material material, Mesh mesh)
         {
             _positions = positions;
             _mesh = mesh;
-            _moveJob = moveJob;
-            _world = world;
             _renderParams = new RenderParams { material = material};
+            _markers = markers;
         }
         
         public void Run()
         {
-            _moveJob.JobHandle.Complete();
+            var filter = new Filter<PositionData, TComponent>(_positions.Map, _markers.Map, Allocator.Temp);
+            var array = filter.GetArray0();
+            var length = array.Length;
+            var batchesCount = length / 1023;
+            var leftoversCount = length % 1023;
             
-            var batchesCount = _world.EntitiesCount / 1023;
             for (int i = 0; i < batchesCount; i++)
             {
-                Graphics.RenderMeshInstanced(_renderParams, _mesh, 0, _positions.GetArray(), 
+                Graphics.RenderMeshInstanced(_renderParams, _mesh, 0, array, 
                     1023, i * 1023);
             }
 
-            var leftover = _world.EntitiesCount % 1023;
-            if (_world.EntitiesCount % 1023 > 0)
-                Graphics.RenderMeshInstanced(_renderParams, _mesh, 0, _positions.GetArray(), 
-                    leftover, _world.EntitiesCount - leftover);
+            if (leftoversCount > 0)
+            {
+                Graphics.RenderMeshInstanced(_renderParams, _mesh, 0, array,
+                    leftoversCount, length - leftoversCount);
+            }
+
+            filter.Dispose();
         }
         
     }

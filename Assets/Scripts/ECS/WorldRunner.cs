@@ -6,13 +6,14 @@ namespace Fleetio.ECS
 {
     public class WorldRunner : MonoBehaviour
     {
+        [SerializeField] private int _initialEntitiesAllocation = 32768;
         [SerializeField] private List<Context> _contexts;
 
         private World _world;
 
         private void Awake()
         {
-            _world = new World();
+            _world = new World(_initialEntitiesAllocation);
             foreach (var context in _contexts)
             {
                 context.Install(_world);
