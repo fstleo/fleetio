@@ -27,9 +27,10 @@ namespace Fleetio.Initialization
             var drawSystem = new DrawMeshesSystem<Fleet>(matrices, world.GetRepo<Fleet>(), _material, _mesh);
             
             world.RegisterSystem(moveSystem);
-            world.RegisterSystem(new MouseInputListener(_camera,_selectionMesh, _selectionMaterial, matrices, world.GetRepo<Selection>()));
+            world.RegisterSystem(new SelectionSystem(_camera,_selectionMesh, _selectionMaterial, matrices, world.GetRepo<Selection>()));
             world.RegisterSystem(new DrawMeshesSystem<Selection>(matrices, world.GetRepo<Selection>(), _selectionMaterial, _selectionMesh));
             world.RegisterSystem(drawSystem);
+            world.RegisterSystem(new RightClickMoveSystem(_camera, world.GetRepo< Selection>(), world.GetRepo<MoveComponent>()));
             
         }
     }

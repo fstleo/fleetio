@@ -2,13 +2,12 @@ using Fleetio.ECS;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Fleetio.Input
 {
-    public class MouseInputListener : ISystem
+    public class SelectionSystem : ISystem
     {
         private Camera _camera;
         private readonly Mesh _selectionMesh;
@@ -21,7 +20,7 @@ namespace Fleetio.Input
 
         private Vector3 _startSelection;
 
-        public MouseInputListener(Camera camera, Mesh selectionMesh, Material selectionMaterial, 
+        public SelectionSystem(Camera camera, Mesh selectionMesh, Material selectionMaterial, 
             ComponentsList<PositionData> positions, ComponentsList<Selection> selections)
         {
             _camera = camera;
@@ -62,6 +61,13 @@ namespace Fleetio.Input
 
             Graphics.DrawMesh(_selectionMesh, Matrix4x4.TRS(bounds.center, Quaternion.identity,  bounds.size), _selectionMaterial, 0);
         }
+        
+        private void StartSelection(Vector2 mousePosition)
+        {
+            _selectionHappening = true;
+            Physics.Raycast(_camera.ScreenPointToRay(mousePosition), out var hit);
+            _startSelection = hit.point;
+        }
 
         private void EndSelection(Vector2 mousePosition)
         {
@@ -87,12 +93,7 @@ namespace Fleetio.Input
             positions.Dispose();
         }
 
-        private void StartSelection(Vector2 mousePosition)
-        {
-            _selectionHappening = true;
-            Physics.Raycast(_camera.ScreenPointToRay(mousePosition), out var hit);
-            _startSelection = hit.point;
-        }
+
         
         [BurstCompile(CompileSynchronously = true)]
         private struct SelectJob : IJobParallelFor

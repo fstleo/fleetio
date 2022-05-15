@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Fleetio.ECS
 {
@@ -11,15 +12,18 @@ namespace Fleetio.ECS
         where T1 : unmanaged
     {
         private NativeList<FilterResult<T0, T1>> _results;
+        private NativeList<int> _ids;
         private NativeList<T0> _results0;
         private NativeList<T1> _results1;
 
         public Filter(NativeHashMap<int, T0> components0,
             NativeHashMap<int, T1> components1, Allocator allocator)
         {
-            _results = new NativeList<FilterResult<T0, T1>>(components0.Count(),allocator);
-            _results0 = new NativeList<T0>(components0.Count(),allocator);
-            _results1 = new NativeList<T1>(components1.Count(),allocator);
+            var count = Math.Min(components0.Count(), components1.Count());
+            _results = new NativeList<FilterResult<T0, T1>>(count,allocator);
+            _results0 = new NativeList<T0>(count,allocator);
+            _results1 = new NativeList<T1>(count,allocator);
+            _ids = new NativeList<int>(count, allocator);
             
             foreach (var set in components0)
             {
@@ -33,6 +37,7 @@ namespace Fleetio.ECS
                     });
                     _results0.Add(set.Value);
                     _results1.Add(item1);
+                    _ids.Add(set.Key);
                 }
             }   
         }
@@ -63,5 +68,9 @@ namespace Fleetio.ECS
             return _results1.AsArray();
         }
 
+        public NativeArray<int> GetIds()
+        {
+            return _ids.AsArray();
+        }
     }
 }
